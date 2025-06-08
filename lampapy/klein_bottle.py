@@ -6,14 +6,17 @@ from build123d import (
     BuildSketch,
     Face,
     GeomType,
+    Location,
+    Locations,
     Mode,
+    PolarLocations,
     Side,
+    Vector,
     __version__,
     make_face,
     offset,
     revolve,
     sweep,
-    Vector,
 )
 from ocp_vscode import Camera, set_port, show_all
 
@@ -53,16 +56,49 @@ with BuildPart() as klein_bottle:
     outer_faces = [Face(outer_wire=face.outer_wire()) for face in planar_faces]
     inner_faces = [Face(outer_wire=face.inner_wires()[-1]) for face in planar_faces]
 
+
+with BuildPart() as sweep_part:
     handle_center_curve = Bezier(
         *ctrl_points_handle,
     )
 
     sweep(sections=outer_faces, path=handle_center_curve, multisection=True)
+
+with BuildPart() as sweep_part_inner:
     sweep(
         sections=inner_faces,
         path=handle_center_curve,
         multisection=True,
-        mode=Mode.SUBTRACT,
+        mode=Mode.ADD,
     )
 
+all_instances = []
+
+# Make each sweep assembly at a rotated polar location
+with Locations(Location((0, 0, 0), (90, 0, 0))):
+    with PolarLocations(radius=0, count=20) as locs:  # adjust radius as needed
+        with Locations(Location((0, 0, 0), (0, 0, 180))) as locs2:
+            for loc in locs.locations:
+                with BuildPart() as instance:
+                    handle_center_curve = Bezier(*ctrl_points_handle)
+                    # Outer sweep (add)
+                    sweep(
+                        sections=outer_faces,
+                        path=handle_center_curve,
+                        multisection=True,
+                        mode=Mode.ADD,
+                    )
+                    # Inner sweep (subtract)
+                    sweep(
+                        sections=inner_faces,
+                        path=handle_center_curve,
+                        multisection=True,
+                        mode=Mode.SUBTRACT,
+                    )
+                # Move the whole instance to its polar location
+                instance.part.locate(loc * locs2.locations[0])
+                all_instances.append(instance.part)
+
+# Show all instances
 show_all(reset_camera=Camera.KEEP)
+# Add

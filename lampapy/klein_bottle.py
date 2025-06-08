@@ -23,7 +23,7 @@ print(f"build123d version: {__version__}")
 with BuildPart() as klein_bottle:
     with BuildSketch():
         with BuildLine():
-            Bezier(
+            base_curve = Bezier(
                 (20, 220),
                 (20, 160),
                 (310, -100),
@@ -41,11 +41,11 @@ with BuildPart() as klein_bottle:
     inner_faces = [Face(outer_wire=face.inner_wires()[-1]) for face in planar_faces]
 
     handle_center_curve = Bezier(
-        (0, -140),
+        (0, (base_curve @ 1).Y),
         (0, 0),
         (510, 440),
         (0, 440),
-        (0, 220),
+        (0, (base_curve @ 0).Y),
     )
 
     sweep(sections=outer_faces, path=handle_center_curve, multisection=True)

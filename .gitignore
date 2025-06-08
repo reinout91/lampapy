@@ -167,3 +167,4 @@ nix-profile*
 .direnv/
 .direnv/bin/nix-direnv-reload
 .step
+.stl

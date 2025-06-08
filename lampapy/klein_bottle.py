@@ -42,15 +42,13 @@ with BuildPart() as klein_bottle_outside:
     outer_wires = [Face(outer_wire=face.outer_wire()) for face in ft]
     inner_wires = [Face(outer_wire=face.inner_wires()[-1]) for face in ft]
 
-    with BuildSketch():
-        with BuildLine() as handle_center_line:
-            h = Bezier(
-                (0, -140),
-                (0, 0),
-                (510, 440),
-                (0, 440),
-                (0, 240),
-            )
+    handle_center_line = Bezier(
+        (0, -140),
+        (0, 0),
+        (510, 440),
+        (0, 440),
+        (0, 240),
+    )
 
     sweep(sections=outer_wires, path=handle_center_line, multisection=True)
     sweep(

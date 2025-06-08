@@ -35,7 +35,7 @@ with BuildPart() as klein_bottle:
 
     revolve(axis=Axis.Y, clean=False)
 
-    planar_faces = klein_bottle.part.faces().filter_by(GeomType.PLANE).sort_by(Axis.Y)
+    planar_faces = klein_bottle.part.faces().filter_by(GeomType.PLANE)
 
     outer_faces = [Face(outer_wire=face.outer_wire()) for face in planar_faces]
     inner_faces = [Face(outer_wire=face.inner_wires()[-1]) for face in planar_faces]

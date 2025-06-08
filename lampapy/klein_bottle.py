@@ -19,11 +19,9 @@ from ocp_vscode import Camera, set_port, show_all
 
 set_port(3939)
 
-print(__version__)
-segment_count = 6
+print(f"build123d version: {__version__}")
 
-
-with BuildPart() as klein_bottle_outside:
+with BuildPart() as klein_bottle:
     with BuildSketch():
         with BuildLine():
             Line([(20, 240), (20, 220)])
@@ -36,13 +34,15 @@ with BuildPart() as klein_bottle_outside:
             )
             offset(side=Side.LEFT, amount=10)
         make_face()
+
     revolve(axis=Axis.Y, clean=False)
 
-    ft = klein_bottle_outside.part.faces().filter_by(GeomType.PLANE).sort_by(Axis.Y)
-    outer_wires = [Face(outer_wire=face.outer_wire()) for face in ft]
-    inner_wires = [Face(outer_wire=face.inner_wires()[-1]) for face in ft]
+    planar_faces = klein_bottle.part.faces().filter_by(GeomType.PLANE).sort_by(Axis.Y)
 
-    handle_center_line = Bezier(
+    outer_faces = [Face(outer_wire=face.outer_wire()) for face in planar_faces]
+    inner_faces = [Face(outer_wire=face.inner_wires()[-1]) for face in planar_faces]
+
+    handle_center_curve = Bezier(
         (0, -140),
         (0, 0),
         (510, 440),
@@ -50,10 +50,10 @@ with BuildPart() as klein_bottle_outside:
         (0, 240),
     )
 
-    sweep(sections=outer_wires, path=handle_center_line, multisection=True)
+    sweep(sections=outer_faces, path=handle_center_curve, multisection=True)
     sweep(
-        sections=inner_wires,
-        path=handle_center_line,
+        sections=inner_faces,
+        path=handle_center_curve,
         multisection=True,
         mode=Mode.SUBTRACT,
     )

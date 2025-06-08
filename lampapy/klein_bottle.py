@@ -6,7 +6,6 @@ from build123d import (
     BuildSketch,
     Face,
     GeomType,
-    Line,
     Mode,
     Side,
     __version__,
@@ -24,7 +23,6 @@ print(f"build123d version: {__version__}")
 with BuildPart() as klein_bottle:
     with BuildSketch():
         with BuildLine():
-            Line([(20, 240), (20, 220)])
             Bezier(
                 (20, 220),
                 (20, 160),
@@ -47,7 +45,7 @@ with BuildPart() as klein_bottle:
         (0, 0),
         (510, 440),
         (0, 440),
-        (0, 240),
+        (0, 220),
     )
 
     sweep(sections=outer_faces, path=handle_center_curve, multisection=True)

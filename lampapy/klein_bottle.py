@@ -13,6 +13,7 @@ from build123d import (
     offset,
     revolve,
     sweep,
+    Vector,
 )
 from ocp_vscode import Camera, set_port, show_all
 
@@ -20,16 +21,28 @@ set_port(3939)
 
 print(f"build123d version: {__version__}")
 
+ctrl_points_jar = [
+    Vector(i) for i in [(15, 110), (15, 0), (700, -50), (45, -150), (45, -40)]
+]
+ctrl_points_handle = [
+    Vector(i)
+    for i in [
+        (0, (ctrl_points_jar[-1]).Y),
+        (0, 100),
+        (200, 100),
+        (600, -40),
+        (600, 280),
+        (400, 350),
+        (0, 280),
+        (0, (ctrl_points_jar[0]).Y),
+    ]
+]
+
+
 with BuildPart() as klein_bottle:
     with BuildSketch():
         with BuildLine():
-            base_curve = Bezier(
-                (20, 220),
-                (20, 160),
-                (310, -100),
-                (20, -240),
-                (20, -140),
-            )
+            base_curve = Bezier(*ctrl_points_jar)
             offset(side=Side.LEFT, amount=10)
         make_face()
 
@@ -41,11 +54,7 @@ with BuildPart() as klein_bottle:
     inner_faces = [Face(outer_wire=face.inner_wires()[-1]) for face in planar_faces]
 
     handle_center_curve = Bezier(
-        (0, (base_curve @ 1).Y),
-        (0, 0),
-        (510, 440),
-        (0, 440),
-        (0, (base_curve @ 0).Y),
+        *ctrl_points_handle,
     )
 
     sweep(sections=outer_faces, path=handle_center_curve, multisection=True)

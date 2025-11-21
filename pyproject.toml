@@ -5,20 +5,14 @@ description = "A nice mechanical lamp written in Python."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "ocp-vscode>=2.6.1",
-    "build123d>=0.8.0",
+    "ocp-vscode>=3.0.0",
+    "build123d>=0.10.0",
     "build123d-ease>=0.2.0.0",
 ]
 
 [project.scripts]
 hello = "lampapa:hello"
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.build.targets.wheel]
-packages = ["lampapa"]
 
 [project.optional-dependencies]
 dev = [

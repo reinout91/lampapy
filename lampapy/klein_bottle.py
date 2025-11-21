@@ -4,12 +4,15 @@ from build123d import (
     BuildLine,
     BuildPart,
     BuildSketch,
-    Circle,
-    Line,
+    Face,
+    GeomType,
+    Location,
+    Locations,
     Mode,
+    PolarLocations,
     Side,
+    Vector,
     __version__,
-    export_stl,
     make_face,
     offset,
     revolve,
@@ -19,71 +22,83 @@ from ocp_vscode import Camera, set_port, show_all
 
 set_port(3939)
 
-print(__version__)
-segment_count = 6
+print(f"build123d version: {__version__}")
 
-with BuildPart() as klein_bottle_outside:
+ctrl_points_jar = [
+    Vector(i) for i in [(15, 110), (15, 0), (700, -50), (45, -150), (45, -40)]
+]
+ctrl_points_handle = [
+    Vector(i)
+    for i in [
+        (0, (ctrl_points_jar[-1]).Y),
+        (0, 100),
+        (200, 100),
+        (600, -40),
+        (600, 280),
+        (400, 350),
+        (0, 280),
+        (0, (ctrl_points_jar[0]).Y),
+    ]
+]
+
+
+with BuildPart() as klein_bottle:
     with BuildSketch():
         with BuildLine():
-            Line([(20, 240), (20, 220)])
-            Bezier(
-                (20, 220),
-                (20, 160),
-                (310, -100),
-                (20, -240),
-                (20, -140),
-            )
+            base_curve = Bezier(*ctrl_points_jar)
             offset(side=Side.LEFT, amount=10)
         make_face()
+
     revolve(axis=Axis.Y, clean=False)
 
-    with BuildSketch():
-        with BuildLine() as handle_center_line:
-            h = Bezier(
-                (0, -140),
-                (0, 0),
-                (510, 440),
-                (0, 440),
-                (0, 240),
-            )
+    planar_faces = klein_bottle.part.faces().filter_by(GeomType.PLANE)
 
-    for i in range(segment_count + 1):
-        with BuildSketch(handle_center_line.line ^ (i / segment_count)) as section:
-            if i == 0:
-                Circle(20)
-            if i == segment_count:
-                Circle(30)
-            else:
-                Circle(20)
-    sections = klein_bottle_outside.pending_faces
-
-    sweep(sections=sections, path=handle_center_line, multisection=True)
+    outer_faces = [Face(outer_wire=face.outer_wire()) for face in planar_faces]
+    inner_faces = [Face(outer_wire=face.inner_wires()[-1]) for face in planar_faces]
 
 
-with BuildPart(mode=Mode.SUBTRACT) as klein_bottle_inside:
-    with BuildSketch():
-        with BuildLine() as handle_center_line:
-            h = Bezier(
-                (0, -140),
-                (0, 0),
-                (510, 440),
-                (0, 440),
-                (0, 240),
-            )
+with BuildPart() as sweep_part:
+    handle_center_curve = Bezier(
+        *ctrl_points_handle,
+    )
 
-    for i in range(segment_count + 1):
-        with BuildSketch(handle_center_line.line ^ (i / segment_count)) as section:
-            if i == 0:
-                Circle(5)
-            if i == segment_count:
-                Circle(20)
-            else:
-                Circle(10)
-    sections = klein_bottle_inside.pending_faces
+    sweep(sections=outer_faces, path=handle_center_curve, multisection=True)
 
-    sweep(sections=sections, path=handle_center_line, multisection=True)
+with BuildPart() as sweep_part_inner:
+    sweep(
+        sections=inner_faces,
+        path=handle_center_curve,
+        multisection=True,
+        mode=Mode.ADD,
+    )
 
-klein_bottle = klein_bottle_outside.part - klein_bottle_inside.part
+all_instances = []
 
-export_stl(klein_bottle, "klein_bottle.stl")
+# Make each sweep assembly at a rotated polar location
+with Locations(Location((0, 0, 0), (90, 0, 0))):
+    with PolarLocations(radius=0, count=20) as locs:  # adjust radius as needed
+        with Locations(Location((0, 0, 0), (0, 0, 180))) as locs2:
+            for loc in locs.locations:
+                with BuildPart() as instance:
+                    handle_center_curve = Bezier(*ctrl_points_handle)
+                    # Outer sweep (add)
+                    sweep(
+                        sections=outer_faces,
+                        path=handle_center_curve,
+                        multisection=True,
+                        mode=Mode.ADD,
+                    )
+                    # Inner sweep (subtract)
+                    sweep(
+                        sections=inner_faces,
+                        path=handle_center_curve,
+                        multisection=True,
+                        mode=Mode.SUBTRACT,
+                    )
+                # Move the whole instance to its polar location
+                instance.part.locate(loc * locs2.locations[0])
+                all_instances.append(instance.part)
+
+# Show all instances
 show_all(reset_camera=Camera.KEEP)
+# Add

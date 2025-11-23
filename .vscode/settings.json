@@ -41,5 +41,5 @@
     "python.analysis.extraPaths": [
         "./lampapy"
     ],
-    "nixEnvSelector.nixFile": "${workspaceFolder}/flake.nix"
+    "nixEnvSelector.nixFile": "${workspaceFolder}/shell.nix",
 }
